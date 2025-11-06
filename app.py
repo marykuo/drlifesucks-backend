@@ -49,12 +49,17 @@ def get_games():
 
 
 # Background scheduler to save cache
-def save_cache():
+def save_cache_periodically():
     while True:
-        print("Saving cache to cache.json")
-        with open("cache.json", "w", encoding="utf-8") as f:
-            json.dump(cache, f, ensure_ascii=False, indent=2)
+        save_cache()
         time.sleep(MINUTES_IN_SECOND * 60)
+
+
+@app.route("/cache/save", methods=["POST"])
+def save_cache():
+    print("Saving cache to cache.json")
+    with open("cache.json", "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
 
 
 # Load cache from file
@@ -71,7 +76,7 @@ def load_cache():
         print(f"Failed to load cache.json: {e}")
 
 
-@app.route("/cleanup", methods=["GET", "POST"])
+@app.route("/cache/cleanup", methods=["POST"])
 def cleanup_cache():
     cache.clear()
     return "Cache cleared", 200
