@@ -19,6 +19,8 @@ jobs:
       - name: Get Docker Image Tag
         id: get-docker-image-tag
         uses: marykuo/get-docker-image-tag@v1
+        with:
+          length: 10
 
       - name: Echo Docker Image Tag
         id: output_variables
@@ -34,6 +36,9 @@ jobs:
         run: |
           echo ${{ needs.get-docker-image-tag.outputs.image-tag }}
           echo ${{ needs.get-docker-image-tag.outputs.image-name }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Docker Auth
         uses: docker/login-action@v3
