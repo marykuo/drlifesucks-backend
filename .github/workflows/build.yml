@@ -1,0 +1,29 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: asia-east1-docker.pkg.dev
+  REPOSITORY: marykuo-cloud-playground/docker-repository
+  IMAGE_NAME: drlifesucks-backend
+  DOCKERFILE_PATH: ./Dockerfile
+
+jobs:
+  get-docker-image-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.output_variables.outputs.image-tag }}
+      image-name: ${{ steps.output_variables.outputs.image-name }}
+    steps:
+      - name: Get Docker Image Tag
+        id: get-docker-image-tag
+        uses: marykuo/get-docker-image-tag@v1
+
+      - name: Echo Docker Image Tag
+        id: output_variables
+        run: |
+          echo "${{ steps.get-docker-image-tag.outputs.image-tag }}"
+          echo "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ steps.get-docker-image-tag.outputs.image-tag }}"
+          echo "image-tag=${{ steps.get-docker-image-tag.outputs.image-tag }}" >> $GITHUB_OUTPUT
+          echo "image-name=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ steps.get-docker-image-tag.outputs.image-tag }}" >> $GITHUB_OUTPUT
