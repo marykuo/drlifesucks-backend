@@ -23,7 +23,27 @@ jobs:
       - name: Echo Docker Image Tag
         id: output_variables
         run: |
-          echo "${{ steps.get-docker-image-tag.outputs.image-tag }}"
-          echo "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ steps.get-docker-image-tag.outputs.image-tag }}"
           echo "image-tag=${{ steps.get-docker-image-tag.outputs.image-tag }}" >> $GITHUB_OUTPUT
           echo "image-name=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ steps.get-docker-image-tag.outputs.image-tag }}" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [get-docker-image-tag]
+    steps:
+      - name: Show Docker Image Info
+        run: |
+          echo ${{ needs.get-docker-image-tag.outputs.image-tag }}
+          echo ${{ needs.get-docker-image-tag.outputs.image-name }}
+
+      - name: Docker Auth
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build And Push Docker image to Artifact Registry
+        shell: bash
+        run: |
+          docker build -t ${{ needs.get-docker-image-tag.outputs.image-name }} -f ${{ env.DOCKERFILE_PATH }} .
+          docker push ${{ needs.get-docker-image-tag.outputs.image-name }}
