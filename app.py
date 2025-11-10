@@ -6,11 +6,11 @@ import time
 import json
 import os
 
+from games_cache import get_game_cache
 
 app = Flask(__name__)
 
-# In-memory cache for game rankings
-cache = {}
+cache = get_game_cache()
 MINUTES_IN_SECOND = 60
 
 
@@ -19,71 +19,47 @@ def health_check():
     return "alive", 200
 
 
-@app.route("/rank")
-def greet():
-    game = request.args.get("game")
+@app.route("/game/<game>/rank")
+def greet(game):
     name = request.args.get("name", "Guest")
     score = request.args.get("score")
-    if game and name and score:
-        time = datetime.datetime.now().isoformat()
-        if game not in cache:
-            cache[game] = []
-        cache[game].append({"name": name, "score": score, "time": time})
+    cache.add_rank_entry(game, name, score)
     return "OK", 200
 
 
-@app.route("/ranks", methods=["GET"])
-def get_ranks():
-    game = request.args.get("game")
-    if game and game in cache:
-        cache_sorted = sorted(
-            cache[game], key=lambda x: float(x["score"]), reverse=True
-        )
-        return jsonify(cache_sorted), 200
-    return jsonify([]), 200
+@app.route("/game/<game>/ranks", methods=["GET"])
+def get_ranks(game):
+    order = request.args.get("order", "desc")
+    sort_descending = order.lower() != "asc"
+    rankings = cache.get_game_rankings(game, sort_descending)
+    return jsonify(rankings), 200
 
 
 @app.route("/games", methods=["GET"])
 def get_games():
-    return jsonify(list(cache.keys())), 200
+    return jsonify(list(cache.get_all_games())), 200
 
 
 # Background scheduler to save cache
 def save_cache_periodically():
     while True:
-        save_cache()
+        cache.save_cache()
         time.sleep(MINUTES_IN_SECOND * 60)
 
 
 @app.route("/cache/save", methods=["POST"])
 def save_cache():
-    print("Saving cache to cache.json")
-    with open("cache.json", "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
-
-
-# Load cache from file
-def load_cache():
-    if not os.path.exists("cache.json"):
-        return
-
-    try:
-        print("Loading cache from cache.json")
-        with open("cache.json", "r", encoding="utf-8") as f:
-            cache.update(json.load(f))
-        print("Cache loaded successfully")
-    except Exception as e:
-        print(f"Failed to load cache.json: {e}")
+    cache.save_cache()
+    return "Cache saved", 200
 
 
 @app.route("/cache/cleanup", methods=["POST"])
 def cleanup_cache():
-    cache.clear()
+    cache.clear_all_cache()
     return "Cache cleared", 200
 
 
 if __name__ == "__main__":
-    load_cache()
     thread = threading.Thread(target=save_cache, daemon=True)
     thread.start()
     app.run(host="0.0.0.0", port=8080)
