@@ -5,6 +5,7 @@ from datetime import datetime
 
 import json
 import os
+import time
 
 
 @dataclass
@@ -22,6 +23,9 @@ class GameCache:
         self.load_cache()
 
         self._lock: threading.Lock = threading.Lock()
+
+        self._thread = threading.Thread(target=self._auto_save, daemon=True)
+        self._thread.start()
 
     def add_rank_entry(
         self,
@@ -110,6 +114,12 @@ class GameCache:
         except Exception as e:
             print(f"Failed to save cache to {self._cache_file}: {e}")
         return False
+
+    def _auto_save(self) -> None:
+        while True:
+            print(f"{datetime.now().isoformat()} Starting auto-save timer")
+            self.save_cache()
+            time.sleep(60)
 
 
 # Global cache instance for easy access
