@@ -120,10 +120,16 @@ class GameCache:
 
     def save_cache(self) -> bool:
         print(f"Saving cache to {self._cache_file}")
-        try:
-            with self._lock:
-                cache_copy = self._cache.copy()
+        with self._lock:
+            cache_copy = self._cache.copy()
 
+        try:
+            print(f"Removing existing cache file {self._cache_file}")
+            os.remove(self._cache_file)
+        except Exception as e:
+            print(f"Failed to remove cache file {self._cache_file}: {e}")
+
+        try:
             with open(self._cache_file, "w", encoding="utf-8") as f:
                 json.dump(cache_copy, f, ensure_ascii=False, indent=2)
 
@@ -131,6 +137,7 @@ class GameCache:
             return True
         except Exception as e:
             print(f"Failed to save cache to {self._cache_file}: {e}")
+
         return False
 
     def _auto_save(self) -> None:
