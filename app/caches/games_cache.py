@@ -10,8 +10,8 @@ import os
 @dataclass
 class RankEntry:
     name: str
-    score: str
-    time: str
+    score: int
+    time: float
 
 
 class GameCache:
@@ -23,34 +23,35 @@ class GameCache:
         self.load_cache()
 
     def add_rank_entry(
-        self, game: str, name: str, score: str, timestamp: Optional[str] = None
+        self,
+        game: str,
+        name: str,
+        score: int,
+        timestamp: Optional[float] = None,
     ) -> bool:
         print(f"Adding {name} with score {score} to game {game}")
         if not all([game, name, score]):
             return False
 
         if timestamp is None:
-            timestamp = datetime.datetime.now().isoformat()
+            timestamp = datetime.now().timestamp()
 
+        rank_entry = RankEntry(name=name, score=score, time=timestamp)
+
+        with self._lock:
             if game not in self._cache:
                 self._cache[game] = []
-            self._cache[game].append({"name": name, "score": score, "time": timestamp})
-            return True
+            self._cache[game].append(asdict(rank_entry))
 
-    def get_game_rankings(self, game: str, sort_descending: bool = True) -> List:
+        return True
+
+    def get_game_rankings(self, game: str) -> List:
         print(f"Getting rankings for game {game}")
         with self._lock:
             if game not in self._cache:
-                rankings = self._cache[game].copy()
+                return []
 
-        try:
-            # Sort by score (convert to float for proper numerical sorting)
-            rankings.sort(key=lambda x: float(x["score"]), reverse=sort_descending)
-        except (ValueError, TypeError):
-            # If score conversion fails, sort as strings
-            rankings.sort(key=lambda x: x["score"], reverse=sort_descending)
-
-        return rankings
+            return self._cache[game].copy()
 
     def get_all_games(self) -> List[str]:
         print("Getting all games")
