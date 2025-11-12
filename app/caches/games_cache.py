@@ -7,6 +7,8 @@ import json
 import os
 import time
 
+from config.settings import get_config
+
 
 @dataclass
 class RankEntry:
@@ -17,13 +19,29 @@ class RankEntry:
 
 class GameCache:
 
-    def __init__(self, cache_file: str = "./files/games_cache.json") -> None:
+    def __init__(
+        self,
+        cache_file: str = "./files/games_cache.json",
+        auto_save_interval: int = 600,
+    ) -> None:
+        """
+        Initialize the GameCache instance.
+
+        Parameters:
+        cache_file (str): Path to the cache file
+        env (str): Environment configuration ('development' or 'production')
+        """
+        print(
+            f"Initializing GameCache with {cache_file} and auto-save interval {auto_save_interval} seconds"
+        )
+
         self._cache_file = cache_file
         self._cache = {}
         self.load_cache()
 
         self._lock: threading.Lock = threading.Lock()
 
+        self._auto_save_interval = auto_save_interval
         self._thread = threading.Thread(target=self._auto_save, daemon=True)
         self._thread.start()
 
@@ -119,18 +137,29 @@ class GameCache:
         while True:
             print(f"{datetime.now().isoformat()} Starting auto-save timer")
             self.save_cache()
-            time.sleep(60)
+            time.sleep(self._auto_save_interval)
 
 
 # Global cache instance for easy access
-game_cache = GameCache()
+game_cache = None
+
+
+def initialize_game_cache(auto_save_interval: int) -> None:
+    global game_cache
+    game_cache = GameCache(auto_save_interval=auto_save_interval)
 
 
 def get_game_cache() -> GameCache:
     """
     Get the global GameCache instance.
 
+    If the cache hasn't been initialized, it will be initialized with
+    development environment settings.
+
     Returns:
         GameCache: The global cache instance
     """
+    global game_cache
+    if game_cache is None:
+        initialize_game_cache(get_config("development").AUTO_SAVE_INTERVAL)
     return game_cache

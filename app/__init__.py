@@ -1,11 +1,15 @@
-# app/__init__.py
 from flask import Flask
 from config.settings import get_config
+from app.caches.games_cache import initialize_game_cache
 
 
 def create_app(env="development"):
+    config = get_config(env)
+
     app = Flask(__name__)
-    app.config.from_object(get_config(env))
+    app.config.from_object(config)
+
+    initialize_game_cache(config.AUTO_SAVE_INTERVAL)
 
     # 註冊藍圖（Blueprints）
     from app.api.heartbeat import heartbeat_bp

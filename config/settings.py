@@ -1,12 +1,15 @@
-# config/settings.py
 class BaseConfig:
     SECRET_KEY = "replace_me"
     DEBUG = False
+    # Auto-save interval in seconds
+    AUTO_SAVE_INTERVAL = 600
 
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     DATABASE_URI = "sqlite:///dev.db"
+    # Development uses more frequent auto-save for testing
+    AUTO_SAVE_INTERVAL = 60
 
 
 class ProductionConfig(BaseConfig):
