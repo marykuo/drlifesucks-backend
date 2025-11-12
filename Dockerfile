@@ -10,13 +10,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 複製應用程式代碼
-COPY app.py .
+COPY . .
 
 # 開放應用程式 Port
 EXPOSE 8080
 
-# 定義環境變數
-ENV FLASK_APP=app.py
+# 定義環境變數 (可在運行時覆蓋)
+ENV FLASK_APP=main.py
 
 # 啟動應用程式
-CMD ["flask", "run", "--host=0.0.0.0", "--port=8080"]
+CMD ["python", "main.py"]
